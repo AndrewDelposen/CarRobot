@@ -1,3 +1,28 @@
 http://rogerdudler.github.io/git-guide/
 
-Johnny NOLAN!!!!!!!!
+To get into Terminal
+1) Right click inside the "CarRobot" folder
+2) Click on "Git Bash Here" in drop down menu
+
+To "Pull" changes AJ made
+1) git pull
+
+To "commit" changes to your LOCAL repository
+1) git add *
+2) git commit -m "INSERT MESSAGE"
+Note: Should see a bunch of stuff...
+[master f5b29a6] including link for git help
+ 1 file changed, 1 insertion(+)
+ create mode 100644 git_help_link.txt
+
+To "Push" changes to master repository
+1) git push
+2) sign into github
+Note: should see flow of info 
+Counting objects: 3, done.
+Delta compression using up to 8 threads.
+Compressing objects: 100% (2/2), done.
+Writing objects: 100% (3/3), 338 bytes | 0 bytes/s, done.
+Total 3 (delta 0), reused 0 (delta 0)
+To https://github.com/AndrewDelposen/CarRobot.git
+   484dafd..f5b29a6  master -> master
