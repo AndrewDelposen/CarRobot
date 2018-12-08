@@ -6,6 +6,9 @@ int SMALL_SLOW_SPEED_CHANGE = 113; //10% decrease for sensor slightly hitting bl
 int SMALL_FAST_SPEED_CHANGE = 134; //10% increase
 int MED_SLOW_SPEED_CHANGE = 94; //25% decrease
 int MED_FAST_SPEED_CHANGE = 156; //25% increase
+int RIGHT_TURN_TIME = 2000; //in microseconds
+int LEFT_TURN_TIME = 2000; //in microseconds
+int CLEARANCE_TIME = 500; //in microseconds
 
 
 //===========Motors definitions==========
@@ -49,10 +52,10 @@ void setup(){
 //Starting movement...
 	//Start moving left motor
     analogWrite(MotorL_PWM, BASE_SPEED); 
-    digitalWrite(MotorL_DIR, HIGH); //HIGH = 1, meaning forward
+    digitalWrite(MotorL_DIR, HIGH); //LOW = 1, meaning forward
     //Start moving right motor
     analogWrite(MotorR_PWM, BASE_SPEED);
-    digitalWrite(MotorR_DIR, HIGH); //HIGH = 1, meaning forward
+    digitalWrite(MotorR_DIR, LOW); //LOW = 1, meaning forward
 }
 
 
@@ -64,6 +67,11 @@ void setup(){
 	long disance;
 	bool other_sensor_black;
 	int clearance;
+	void ObjectAvoidance();
+	void activeStop();
+	void moveForward();
+	void turnRight();
+	void turnLeft();
 void loop(){
 
 //Left sensor check...
@@ -247,6 +255,93 @@ void loop(){
 	delay(10);
 }
 */
+
+void ObjectAvoidance() {
+	//Stop moving
+	activeStop();
+	//Turn 90 degrees to the right
+	turnRight();
+
+	//Move forward until lidar stops detecting
+	moveForward();
+	while(lidar hitting){
+		lidar read
+	}
+
+	//Continue to move forward to give back of robot clearance
+	delayMicroseconds(CLEARANCE_TIME);
+	//Stop moving
+	activeStop();
+	//Turn right on self
+	turnLeft();
+	
+	//Move forward until lidar hits... and then passes object
+	moveForward();
+	while(lidar NOT hitting || did_hit){
+		lidar read
+		if(lidar hits){
+			did_hit = true
+		}
+	}
+	
+	//Continue moving forward to give rear robot clearance
+	delayMicroseconds(CLEARANCE_TIME);
+	//stop moving
+	activeStop();
+	//turn left again
+	turnLeft();
+
+	//Move forward until one/both sensors hit black line
+	moveForward();
+	
+
+
+
+}
+
+//Function that turns the robot 90 degrees to thr right on itself
+void turnRight(){
+	//Active stop both motors
+	activeStop();
+	//Set right motor to go backwards
+	digitalWrite(MotorR_DIR, LOW); //HIGH = 1, meaning forward
+	//MOVE both motors forward
+	moveForward();
+	//Turn for x time
+	delayMicroseconds(RIGHT_TURN_TIME);
+	//stop
+	activeStop();
+	//reset direction of right motor
+	digitalWrite(MotorR_DIR, HIGH);
+}
+
+//Function that turns the robot 90 degrees to the left on itself
+void turnLeft(){
+	//Active stop both motors
+	activeStop();
+	//Set right motor to go backwards
+	digitalWrite(MotorL_DIR, LOW); //HIGH = 1, meaning forward
+	//MOVE both motors forward
+	moveForward();
+	//Turn for x time
+	delayMicroseconds(LEFT_TURN_TIME);
+	//stop
+	activeStop();
+	//reset direction of right motor
+	digitalWrite(MotorL_DIR, HIGH);
+}
+
+//Helper function to move both wheels at base speeds
+void moveForward() {
+	analogWrite(MotorL_PWM, BASE_SPEED);
+	analogWrite(MotorR_PWM, BASE_SPEED);
+}
+
+//Helper function to stop both wheels
+void activeStop() {
+	analogWrite(MotorL_PWM, 0);
+	analogWrite(MotorR_PWM, 0);
+}
 
 /*
 	if(distance <= xxx){
