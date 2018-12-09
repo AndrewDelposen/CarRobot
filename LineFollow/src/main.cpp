@@ -62,7 +62,7 @@ void setup(){
 	pinMode(FRONT_LED_PIN, OUTPUT);
 	pinMode(REAR_L_LED_PIN, OUTPUT);
 	pinMode(REAR_R_LED_PIN, OUTPUT);
-	//Turn on LEDs
+	//Turn on front LEDs
 	digitalWrite(FRONT_LED_PIN, HIGH); //HIGH = on
 
 //Serial Setup...
@@ -85,7 +85,6 @@ void setup(){
     int leftSensorVal;
     int readQD(int PIN);
 	long convertUltra(long duration);
-	long disance;
 	bool other_sensor_black;
 	int clearance;
 	void ObjectAvoidance();
@@ -95,6 +94,8 @@ void setup(){
 	void turnLeft();
 	long lidar_value;
 	bool did_hit = false;
+	long readUltra();
+	long ultra_distance;
 void loop(){
 
 //Left sensor check...
@@ -227,6 +228,15 @@ void loop(){
 		analogWrite(MotorR_PWM, BASE_SPEED);
 		
 	}
+	
+//Ultrasonic sensor check...
+	//Get value from ultrasonic sensor in cm
+	ultra_distance = readUltra();
+	//See if we need to go into object avoidance mode
+	if(ultra_distance <= -1){ //TODO find value where sensor is triggered by ultra
+		ObjectAvoidance();
+	}
+	
 	delay(2);
 }
 
@@ -278,6 +288,7 @@ void loop(){
 }
 */
 
+//Function that will have the robot go around detected object and back onto black line
 void ObjectAvoidance() {
 	//Stop moving
 	digitalWrite(REAR_L_LED_PIN, HIGH); //HIGH = on
@@ -442,6 +453,19 @@ void moveForward() {
 void activeStop() {
 	analogWrite(MotorL_PWM, 0);
 	analogWrite(MotorR_PWM, 0);
+}
+
+//Get value from ultrasonic sensor
+long readUltra(){
+	long distance
+	//Get a pulse of data
+	digitalWrite(TRIGGER_PIN, LOW);
+	delayMicroseconds(2);
+	digitalWrite(TRIGGER_PIN, HIGH);
+	delayMicroseconds(5);
+	digitalWrite(TRIGGER_PIN, LOW);
+	
+	return convertUltra(pulseIn(ULTRASENSOR_PIN, HIGH));
 }
 
 //Get value from IR Reflection sensor based on PIN#
