@@ -203,7 +203,6 @@ void loop(){
 		analogWrite(MotorL_PWM, BASE_SPEED);
 		analogWrite(MotorR_PWM, BASE_SPEED);
 		
-		//IGNORE RIGHT WHEEL SENSOR check? 
 	}
 	delay(2);
 }
@@ -293,8 +292,57 @@ void ObjectAvoidance() {
 
 	//Move forward until one/both sensors hit black line
 	moveForward();
-	
+	rightSensorVal = 0;
+	//while right sensor is not hitting black, keep going until it really hits black
+	while(rightSensorVal < 1200){
+		rightSensorVal = readQD(RIGHT_SENSOR_PIN);
+	}
 
+	/////////TODO NOTE: this is exactly from within loop... maybe make function out of it
+	//Active stop BOTH wheels
+	analogWrite(MotorL_PWM, 0);
+	analogWrite(MotorR_PWM, 0);
+
+	//Set right wheel to backwards direction
+	digitalWrite(MotorR_DIR, LOW); //HIGH = 1, meaning forward
+
+	//MOVE BOTH wheels to base speeds
+	analogWrite(MotorL_PWM, BASE_SPEED);
+	analogWrite(MotorR_PWM, BASE_SPEED);
+
+	other_sensor_black = false;
+	clearance = 0;
+	//MOVE until right sensor is OFF black line
+	while(rightSensorVal > 800 || other_sensor_black){
+		rightSensorVal = readQD(RIGHT_SENSOR_PIN);
+		leftSensorVal = readQD(LEFT_SENSOR_PIN);
+
+		if(rightSensorVal < 800 && leftSensorVal > 1200){
+			other_sensor_black = true;
+			analogWrite(MotorR_DIR, LOW);
+			analogWrite(MotorR_PWM, 50);
+			analogWrite(MotorL_PWM, MED_FAST_SPEED_CHANGE);
+		}
+		else if(leftSensorVal < 800 && rightSensorVal < 1200){
+			if(clearance <= 1){
+				clearance++;
+			}
+			else {
+				other_sensor_black = false;
+			}
+		}
+	}
+
+	//Active stop both wheels
+	analogWrite(MotorL_PWM, 0);
+	analogWrite(MotorR_PWM, 0);
+	
+	//Set RIGHT wheel to forward direction
+	digitalWrite(MotorR_DIR, HIGH); //HIGH = 1, meaning forward
+	
+	//MOVE BOTH wheels to base speeds
+	analogWrite(MotorL_PWM, BASE_SPEED);
+	analogWrite(MotorR_PWM, BASE_SPEED);
 
 
 }
