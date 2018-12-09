@@ -8,9 +8,12 @@ int SMALL_SLOW_SPEED_CHANGE = 113; //10% decrease for sensor slightly hitting bl
 int SMALL_FAST_SPEED_CHANGE = 134; //10% increase
 int MED_SLOW_SPEED_CHANGE = 94; //25% decrease
 int MED_FAST_SPEED_CHANGE = 156; //25% increase
-int RIGHT_TURN_TIME = 2000; //in microseconds
-int LEFT_TURN_TIME = 2000; //in microseconds
+uint32_t RIGHT_TURN_TIME = 713; //in seconds
+uint32_t LEFT_TURN_TIME = 765; //in seconds
 int CLEARANCE_TIME = 500; //in microseconds
+int ULTRA_DISTANCE_TRIGGER = 18;
+int LIDAR_CLOSE_TRIGGER = 1;
+int LIDAR_FAR_TRIGGER = 1;
 VL53L0X lid_sensor;
 
 
@@ -29,9 +32,9 @@ VL53L0X lid_sensor;
 #define TRIGGER_PIN 5
 #define ULTRASENSOR_PIN 3
 //==========LED defintions==============
-#define FRONT_LED_PIN
-#define REAR_L_LED_PIN
-#define REAR_R_LED_PIN
+#define FRONT_LED_PIN 0
+#define REAR_L_LED_PIN 0
+#define REAR_R_LED_PIN 0
 
 void setup(){
 //Motors Setup...
@@ -56,7 +59,7 @@ void setup(){
 	lid_sensor.init();
 	lid_sensor.setTimeout(500);
 	//Take constant readings
-	lid_sensor.startContinous();
+	lid_sensor.startContinuous();
 
 //LEDs Setup...
 	pinMode(FRONT_LED_PIN, OUTPUT);
@@ -72,11 +75,11 @@ void setup(){
 
 //Starting movement...
 	//Start moving left motor
-    analogWrite(MotorL_PWM, BASE_SPEED); 
-    digitalWrite(MotorL_DIR, HIGH); //LOW = 1, meaning forward
+	digitalWrite(MotorL_DIR, HIGH); //HIGH = 1, meaning forward
+//	analogWrite(MotorL_PWM, BASE_SPEED); 
     //Start moving right motor
-    analogWrite(MotorR_PWM, BASE_SPEED);
-    digitalWrite(MotorR_DIR, LOW); //LOW = 1, meaning forward
+	digitalWrite(MotorR_DIR, HIGH); //HIGH = 1, meaning forward
+//	analogWrite(MotorR_PWM, BASE_SPEED);
 }
 
 
@@ -95,9 +98,11 @@ void setup(){
 	long lidar_value;
 	bool did_hit = false;
 	long readUltra();
-	long ultra_distance;
-void loop(){
+	long ultra_distance = 0;
+//void loop(){
 
+//}
+/*
 //Left sensor check...
 	leftSensorVal = readQD(LEFT_SENSOR_PIN);
 	Serial.print("Left sensor value: "); Serial.println(leftSensorVal);
@@ -233,13 +238,13 @@ void loop(){
 	//Get value from ultrasonic sensor in cm
 	ultra_distance = readUltra();
 	//See if we need to go into object avoidance mode
-	if(ultra_distance <= -1){ //TODO find value where sensor is triggered by ultra
+	if(ultra_distance <= ULTRA_DISTANCE_TRIGGER){ 
 		ObjectAvoidance();
 	}
 	
 	delay(2);
 }
-
+*/
 // SAVE for getting raw values from lines
 /*
 void loop(){
@@ -269,8 +274,10 @@ void loop(){
 // left side partly over 	| 800-850, 750 <= 950	| 450 < 600
 // left sensor halfway over | 950-1200,950 <= 1300	| 600 < 1000
 // left sensor on black 	| 1300 <=, 1300<=		| 1000
-	
-/*void loop(){
+
+//Test code for the ultrasonic sensor
+/*	
+void loop(){
 	long distance; //MOVE OUTSIDE OF LOOP
 	
 	//Get a pulse of data
@@ -284,9 +291,18 @@ void loop(){
 	distance = convertUltra(pulseIn(ULTRASENSOR_PIN, HIGH));
 	Serial.print("Disance = ");Serial.println(distance);
 
-	delay(10);
+	delay(100);
 }
 */
+
+//Test loop for the LIDAR sensor
+void loop(){
+	//Print the information in MM
+    long val = lid_sensor.readRangeContinuousMillimeters();
+    Serial.print("Value in mm: ");Serial.println(val);
+	delay(100);
+}
+
 
 //Function that will have the robot go around detected object and back onto black line
 void ObjectAvoidance() {
@@ -328,7 +344,7 @@ void ObjectAvoidance() {
 	while(!did_hit || lidar_value > -1){ //TODO figureout what value is "not hitting"
 		lidar_value = lid_sensor.readRangeContinuousMillimeters();
 		if(lidar_value < -1){ //TODO figure out what value counts as "hitting obj"
-			did_hit = true
+			did_hit = true;
 		}
 	}
 	
@@ -420,7 +436,7 @@ void turnRight(){
 	//MOVE both motors forward
 	moveForward();
 	//Turn for x time
-	delayMicroseconds(RIGHT_TURN_TIME);
+	delay(RIGHT_TURN_TIME);
 	//stop
 	activeStop();
 	//reset direction of right motor
@@ -436,7 +452,7 @@ void turnLeft(){
 	//MOVE both motors forward
 	moveForward();
 	//Turn for x time
-	delayMicroseconds(LEFT_TURN_TIME);
+	delay(LEFT_TURN_TIME);
 	//stop
 	activeStop();
 	//reset direction of right motor
@@ -457,7 +473,6 @@ void activeStop() {
 
 //Get value from ultrasonic sensor
 long readUltra(){
-	long distance
 	//Get a pulse of data
 	digitalWrite(TRIGGER_PIN, LOW);
 	delayMicroseconds(2);
