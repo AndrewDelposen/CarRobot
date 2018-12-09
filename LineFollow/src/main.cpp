@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <Wire.h>
+#include <VL53L0X.h>
 
 //GLOBAL VARIABLES
 int BASE_SPEED = 125; //125 = "half power"
@@ -9,6 +11,7 @@ int MED_FAST_SPEED_CHANGE = 156; //25% increase
 int RIGHT_TURN_TIME = 2000; //in microseconds
 int LEFT_TURN_TIME = 2000; //in microseconds
 int CLEARANCE_TIME = 500; //in microseconds
+VL53L0X lid_sensor;
 
 
 //===========Motors definitions==========
@@ -25,6 +28,10 @@ int CLEARANCE_TIME = 500; //in microseconds
 //==========ULTRASONIC defintions=========
 #define TRIGGER_PIN 5
 #define ULTRASENSOR_PIN 3
+//==========LED defintions==============
+#define FRONT_LED_PIN
+#define REAR_L_LED_PIN
+#define REAR_R_LED_PIN
 
 void setup(){
 //Motors Setup...
@@ -43,6 +50,20 @@ void setup(){
 //Ultrasonic Setup...
 	pinMode(TRIGGER_PIN, OUTPUT);
     pinMode(ULTRASENSOR_PIN, INPUT);
+
+//Lidar sensor Setup...
+	Wire.begin();
+	lid_sensor.init();
+	lid_sensor.setTimeout(500);
+	//Take constant readings
+	lid_sensor.startContinous();
+
+//LEDs Setup...
+	pinMode(FRONT_LED_PIN, OUTPUT);
+	pinMode(REAR_L_LED_PIN, OUTPUT);
+	pinMode(REAR_R_LED_PIN, OUTPUT);
+	//Turn on LEDs
+	digitalWrite(FRONT_LED_PIN, HIGH); //HIGH = on
 
 //Serial Setup...
 	Serial.begin(9600);
@@ -72,6 +93,8 @@ void setup(){
 	void moveForward();
 	void turnRight();
 	void turnLeft();
+	long lidar_value;
+	bool did_hit = false;
 void loop(){
 
 //Left sensor check...
@@ -257,28 +280,43 @@ void loop(){
 
 void ObjectAvoidance() {
 	//Stop moving
+	digitalWrite(REAR_L_LED_PIN, HIGH); //HIGH = on
+	digitalWrite(REAR_R_LED_PIN, HIGH); //HIGH = on
 	activeStop();
 	//Turn 90 degrees to the right
+	digitalWrite(REAR_L_LED_PIN, LOW); //HIGH = on
 	turnRight();
+	digitalWrite(REAR_L_LED_PIN, HIGH); //HIGH = on
 
 	//Move forward until lidar stops detecting
+	digitalWrite(REAR_L_LED_PIN, LOW); //HIGH = on
+	digitalWrite(REAR_R_LED_PIN, LOW); //HIGH = on
 	moveForward();
-	while(lidar hitting){
-		lidar read
+	lidar_value = 0;
+	while(lidar_value > -1){ //TODO figureout what value is "exceeding"
+		lidar_value = lid_sensor.readRangeContinuousMillimeters();
 	}
 
 	//Continue to move forward to give back of robot clearance
 	delayMicroseconds(CLEARANCE_TIME);
 	//Stop moving
+	digitalWrite(REAR_L_LED_PIN, HIGH); //HIGH = on
+	digitalWrite(REAR_R_LED_PIN, HIGH); //HIGH = on
 	activeStop();
 	//Turn right on self
+	digitalWrite(REAR_R_LED_PIN, LOW); //HIGH = on
 	turnLeft();
+	digitalWrite(REAR_R_LED_PIN, HIGH); //HIGH = on
 	
 	//Move forward until lidar hits... and then passes object
+	digitalWrite(REAR_L_LED_PIN, LOW); //HIGH = on
+	digitalWrite(REAR_R_LED_PIN, LOW); //HIGH = on
 	moveForward();
-	while(lidar NOT hitting || did_hit){
-		lidar read
-		if(lidar hits){
+	lidar_value = 0;
+	did_hit = false;
+	while(!did_hit || lidar_value > -1){ //TODO figureout what value is "not hitting"
+		lidar_value = lid_sensor.readRangeContinuousMillimeters();
+		if(lidar_value < -1){ //TODO figure out what value counts as "hitting obj"
 			did_hit = true
 		}
 	}
@@ -286,11 +324,18 @@ void ObjectAvoidance() {
 	//Continue moving forward to give rear robot clearance
 	delayMicroseconds(CLEARANCE_TIME);
 	//stop moving
+	digitalWrite(REAR_L_LED_PIN, HIGH); //HIGH = on
+	digitalWrite(REAR_R_LED_PIN, HIGH); //HIGH = on
 	activeStop();
 	//turn left again
+	digitalWrite(REAR_R_LED_PIN, LOW); //HIGH = on
 	turnLeft();
+	digitalWrite(REAR_R_LED_PIN, HIGH); //HIGH = on
+
 
 	//Move forward until one/both sensors hit black line
+	digitalWrite(REAR_L_LED_PIN, LOW); //HIGH = on
+	digitalWrite(REAR_R_LED_PIN, LOW); //HIGH = on
 	moveForward();
 	rightSensorVal = 0;
 	//while right sensor is not hitting black, keep going until it really hits black
@@ -300,6 +345,8 @@ void ObjectAvoidance() {
 
 	/////////TODO NOTE: this is exactly from within loop... maybe make function out of it
 	//Active stop BOTH wheels
+	digitalWrite(REAR_L_LED_PIN, HIGH); //HIGH = on
+	digitalWrite(REAR_R_LED_PIN, HIGH); //HIGH = on
 	analogWrite(MotorL_PWM, 0);
 	analogWrite(MotorR_PWM, 0);
 
@@ -309,6 +356,8 @@ void ObjectAvoidance() {
 	//MOVE BOTH wheels to base speeds
 	analogWrite(MotorL_PWM, BASE_SPEED);
 	analogWrite(MotorR_PWM, BASE_SPEED);
+	digitalWrite(REAR_L_LED_PIN, LOW); //HIGH = on
+	digitalWrite(REAR_R_LED_PIN, LOW); //HIGH = on
 
 	other_sensor_black = false;
 	clearance = 0;
@@ -334,6 +383,8 @@ void ObjectAvoidance() {
 	}
 
 	//Active stop both wheels
+	digitalWrite(REAR_L_LED_PIN, HIGH); //HIGH = on
+	digitalWrite(REAR_R_LED_PIN, HIGH); //HIGH = on
 	analogWrite(MotorL_PWM, 0);
 	analogWrite(MotorR_PWM, 0);
 	
@@ -341,6 +392,8 @@ void ObjectAvoidance() {
 	digitalWrite(MotorR_DIR, HIGH); //HIGH = 1, meaning forward
 	
 	//MOVE BOTH wheels to base speeds
+	digitalWrite(REAR_L_LED_PIN, LOW); //HIGH = on
+	digitalWrite(REAR_R_LED_PIN, LOW); //HIGH = on
 	analogWrite(MotorL_PWM, BASE_SPEED);
 	analogWrite(MotorR_PWM, BASE_SPEED);
 
@@ -390,60 +443,6 @@ void activeStop() {
 	analogWrite(MotorL_PWM, 0);
 	analogWrite(MotorR_PWM, 0);
 }
-
-/*
-	if(distance <= xxx){
-		//Active stop both wheels
-		analogWrite(MotorL_PWM, 0);
-		analogWrite(MotorR_PWM, 0);
-		
-		//Switch direction of wheel
-		
-		//wheel turns for x time to get 90 degrees
-		
-		//active stop
-		
-		//reset wheel direction
-		
-		//forward
-		//UNTIL lidar stops hitting
-		
-		//forward for x time (get back end to exceed the obj)
-		
-		//active stop
-		
-		//switch direction of wheel
-		//wheel turns for x time to get 90 degrees
-		
-		//active stop
-		
-		//forward
-		//UNTIL lidar hits
-		
-		//continue forward
-		//UNTIL lidar stops hitting
-		
-		//move forward a bit more??? x time
-		
-		//active stop
-		
-		//switch direction of wheels
-		//move until 90 degrees for xxx time
-		
-		//switch direction
-		
-		//move forward
-		//UNTIL black line detected by both???
-		//.....????
-		
-		
-	}
-	
-	//Print out the correct real world example
-	Serial.println(distance);
-}
-*/
-
 
 //Get value from IR Reflection sensor based on PIN#
 int readQD(int PIN){
