@@ -31,8 +31,8 @@ VL53L0X lid_sensor;
 #define ULTRASENSOR_PIN 3
 //==========LED defintions==============
 #define FRONT_LED_PIN 1
-#define REAR_L_LED_PIN 14
-#define REAR_R_LED_PIN 0
+#define REAR_L_LED_PIN 0
+#define REAR_R_LED_PIN 2
 
 void setup(){
 //Motors Setup...
@@ -125,6 +125,7 @@ void parallel_Park(){
     //TURN ON TAIL LIGHTS
     digitalWrite(REAR_L_LED_PIN, HIGH);
     digitalWrite(REAR_R_LED_PIN, HIGH);
+
     //PUT IN REVERSE
     digitalWrite(MotorL_DIR, LOW);
     digitalWrite(MotorR_DIR, LOW);
